@@ -251,9 +251,13 @@
         let captchaRequired = false;
 
         // Captcha handling
+        let captchaRetries = 0;
+        const MAX_RETRIES = 3;
+
         function onTurnstileSuccess(token) {
             console.log("✅ Captcha verified successfully");
             captchaToken = token;
+            captchaRetries = 0;
             document.getElementById('captcha-overlay').classList.remove('active');
             
             // Send token to Flash/Ruffle if it's waiting
@@ -269,8 +273,27 @@
 
         function onTurnstileError(code) {
             console.error("❌ Captcha error:", code);
+            captchaRetries++;
+            
+            if (captchaRetries >= MAX_RETRIES) {
+                console.log("⚠️ Captcha service appears down - attempting bypass");
+                captchaToken = "bypass_mode";
+                document.getElementById('captcha-overlay').classList.remove('active');
+                updateConnectionStatus("Captcha service down - continuing anyway", false);
+                
+                // Try to send dummy token
+                if (rufflePlayer) {
+                    try {
+                        rufflePlayer.finishedCaptcha("bypass_mode");
+                    } catch (e) {
+                        console.log("Could not send bypass token:", e);
+                    }
+                }
+                return;
+            }
+            
             captchaToken = null;
-            updateConnectionStatus("Captcha failed - retrying...", true);
+            updateConnectionStatus(`Captcha failed (${captchaRetries}/${MAX_RETRIES}) - retrying...`, true);
             
             // Auto-retry after 2 seconds
             setTimeout(() => {
