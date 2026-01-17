@@ -243,6 +243,35 @@
     <!-- Ruffle Flash Emulator -->
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
+    <!-- URL Proxy to fix ishikdeveloper.github.io → play.cpzero.net -->
+    <script>
+        (function() {
+            const originalFetch = window.fetch;
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+
+            function transformUrl(url) {
+                if (typeof url === 'string') {
+                    if (url.includes('ishikdeveloper.github.io')) {
+                        return url.replace(/https?:\/\/ishikdeveloper\.github\.io/g, 'https://play.cpzero.net');
+                    }
+                }
+                return url;
+            }
+
+            window.fetch = function(resource, init) {
+                resource = transformUrl(resource);
+                return originalFetch.call(this, resource, init);
+            };
+
+            XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+                url = transformUrl(url);
+                return originalXHROpen.call(this, method, url, async, user, password);
+            };
+
+            console.log('🔧 URL proxy installed: ishikdeveloper.github.io → play.cpzero.net');
+        })();
+    </script>
+
     <!-- Main Script -->
     <script>
         const media = "https://media.cpzero.net/";
@@ -259,16 +288,11 @@
             captchaToken = token;
             captchaRetries = 0;
             document.getElementById('captcha-overlay').classList.remove('active');
+            updateConnectionStatus("Captcha verified ✓", false);
             
-            // Send token to Flash/Ruffle if it's waiting
-            if (rufflePlayer) {
-                try {
-                    rufflePlayer.finishedCaptcha(String(token));
-                    updateConnectionStatus("Captcha verified", false);
-                } catch (e) {
-                    console.error("Error sending token to Flash:", e);
-                }
-            }
+            // Flash will call getCaptchaToken() when it needs the token
+            // No need to push it - the game pulls it via ExternalInterface
+            console.log("Token ready for Flash to retrieve");
         }
 
         function onTurnstileError(code) {
@@ -276,19 +300,9 @@
             captchaRetries++;
             
             if (captchaRetries >= MAX_RETRIES) {
-                console.log("⚠️ Captcha service appears down - attempting bypass");
-                captchaToken = "bypass_mode";
+                console.log("⚠️ Captcha service down - login may fail without valid token");
                 document.getElementById('captcha-overlay').classList.remove('active');
-                updateConnectionStatus("Captcha service down - continuing anyway", false);
-                
-                // Try to send dummy token
-                if (rufflePlayer) {
-                    try {
-                        rufflePlayer.finishedCaptcha("bypass_mode");
-                    } catch (e) {
-                        console.log("Could not send bypass token:", e);
-                    }
-                }
+                updateConnectionStatus("Captcha unavailable - try again later", true);
                 return;
             }
             
