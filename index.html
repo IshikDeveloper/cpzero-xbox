@@ -120,14 +120,43 @@
             height: 100% !important;
         }
 
-        /* Turnstile (hidden) */
-        #turnstile-widget {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
+        /* Captcha Overlay */
+        #captcha-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100000;
+            flex-direction: column;
         }
 
-        /* Low Memory Warning */
+        #captcha-overlay.active {
+            display: flex;
+        }
+
+        #captcha-overlay h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        #captcha-overlay p {
+            color: #aaa;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .cf-turnstile {
+            transform: scale(1.2);
+        }
+
+        /* Memory Warning */
         .memory-warning {
             position: fixed;
             top: 10px;
@@ -144,11 +173,37 @@
         .memory-warning.show {
             display: block;
         }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .connection-status.show {
+            display: block;
+        }
+
+        .connection-status.error {
+            color: #f00;
+        }
     </style>
 </head>
 <body>
-    <!-- Turnstile Captcha (hidden but functional) -->
-    <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAACCBKuQjFh5yFw16" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-size="invisible"></div>
+    <!-- Captcha Overlay -->
+    <div id="captcha-overlay">
+        <h2>🔒 Security Verification</h2>
+        <p>Please complete the security check to continue. This helps protect Club Penguin Zero from bots.</p>
+        <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAACCBKuQjFh5yFw16" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-theme="dark"></div>
+    </div>
 
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -167,6 +222,11 @@
         <span>Left Stick</span>: Move | <span>A</span>: Click | <span>B</span>: Back
     </div>
 
+    <!-- Connection Status -->
+    <div class="connection-status" id="connection-status">
+        Connecting to server...
+    </div>
+
     <!-- Memory Warning -->
     <div class="memory-warning" id="memory-warning">
         ⚠️ Low Memory Detected - Performance May Degrade
@@ -183,73 +243,98 @@
     <!-- Ruffle Flash Emulator -->
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
-    <!-- Captcha Functions -->
+    <!-- Main Script -->
     <script>
-        var captchaToken = null;
+        const media = "https://media.cpzero.net/";
+        let rufflePlayer = null;
+        let captchaToken = null;
+        let captchaRequired = false;
 
+        // Captcha handling
         function onTurnstileSuccess(token) {
-            console.log("Turnstile success");
+            console.log("✅ Captcha verified successfully");
             captchaToken = token;
-            var flash = document.querySelector("ruffle-player");
-            if (flash) {
+            document.getElementById('captcha-overlay').classList.remove('active');
+            
+            // Send token to Flash/Ruffle if it's waiting
+            if (rufflePlayer) {
                 try {
-                    flash.finishedCaptcha(String(token));
+                    rufflePlayer.finishedCaptcha(String(token));
+                    updateConnectionStatus("Captcha verified", false);
                 } catch (e) {
-                    console.error("Error calling AS3 callback:", e);
+                    console.error("Error sending token to Flash:", e);
                 }
             }
         }
 
         function onTurnstileError(code) {
-            console.error("Turnstile error:", code);
+            console.error("❌ Captcha error:", code);
             captchaToken = null;
+            updateConnectionStatus("Captcha failed - retrying...", true);
+            
+            // Auto-retry after 2 seconds
+            setTimeout(() => {
+                if (window.turnstile) {
+                    turnstile.reset();
+                }
+            }, 2000);
         }
 
-        function grecaptchaSubmit() {
-            console.log("Captcha request received");
-            if (window.turnstile) {
-                turnstile.reset();
-                turnstile.execute("#turnstile-widget");
-            }
+        function showCaptcha() {
+            console.log("📋 Showing captcha overlay");
+            document.getElementById('captcha-overlay').classList.add('active');
+            captchaRequired = true;
+            
+            // Auto-execute invisible captcha
+            setTimeout(() => {
+                if (window.turnstile) {
+                    turnstile.execute("#turnstile-widget");
+                }
+            }, 500);
         }
 
         function getCaptchaToken() {
+            if (!captchaToken) {
+                showCaptcha();
+                return null;
+            }
             return captchaToken;
         }
 
         function triggerCaptcha() {
-            grecaptchaSubmit();
+            showCaptcha();
         }
-    </script>
 
-    <!-- Main Xbox Controller & Performance Script -->
-    <script>
-        const media = "https://media.cpzero.net/";
-        
+        function grecaptchaSubmit() {
+            showCaptcha();
+        }
+
+        function updateConnectionStatus(message, isError) {
+            const statusEl = document.getElementById('connection-status');
+            statusEl.textContent = message;
+            statusEl.classList.toggle('error', isError);
+            statusEl.classList.add('show');
+            
+            if (!isError) {
+                setTimeout(() => {
+                    statusEl.classList.remove('show');
+                }, 3000);
+            }
+        }
+
         // Xbox-Optimized Ruffle Config
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
-            // CRITICAL: Lower settings for Xbox RAM limits
             quality: "low",
             scale: "exactfit",
             letterbox: "off",
             forceAlign: false,
             forceScale: true,
-            
-            // Reduced execution time to prevent crashes
             maxExecutionDuration: 15,
-            
-            // Disable splash to save memory
             splashScreen: false,
             autoplay: "on",
             unmuteOverlay: "hidden",
-            
-            // Font sources
-            fontSources: [
-                media + "play/v2/client/fonts/en/FontLibrary.swf"
-            ],
-            
-            // Socket proxy config
+            fontSources: [media + "play/v2/client/fonts/en/FontLibrary.swf"],
             socketProxy: [
                 {
                     host: "server.cpzero.net",
@@ -267,12 +352,8 @@
                     proxyUrl: "wss://server.cpzero.net/below_zero"
                 }
             ],
-            
-            // Allow script access
             allowScriptAccess: true,
             warnOnUnsupportedContent: false,
-            
-            // Performance optimizations
             preferredRenderer: "webgl",
             backgroundColor: "#000000"
         };
@@ -286,13 +367,10 @@
                 this.cursorY = window.innerHeight / 2;
                 this.cursorSpeed = 8;
                 this.deadzone = 0.15;
-                
-                // Virtual cursor element
                 this.cursor = this.createCursor();
                 
                 window.addEventListener('gamepadconnected', (e) => this.onConnect(e));
                 window.addEventListener('gamepaddisconnected', (e) => this.onDisconnect(e));
-                
                 this.pollGamepad();
             }
             
@@ -315,7 +393,7 @@
             }
             
             onConnect(e) {
-                console.log("Xbox Controller Connected:", e.gamepad.id);
+                console.log("🎮 Controller Connected:", e.gamepad.id);
                 this.gamepad = e.gamepad;
                 this.cursor.style.display = 'block';
                 document.getElementById('controller-hint').classList.add('active');
@@ -325,7 +403,7 @@
             }
             
             onDisconnect(e) {
-                console.log("Xbox Controller Disconnected");
+                console.log("🎮 Controller Disconnected");
                 this.gamepad = null;
                 this.cursor.style.display = 'none';
             }
@@ -334,67 +412,45 @@
                 if (this.gamepad) {
                     const gamepads = navigator.getGamepads();
                     this.gamepad = gamepads[this.gamepad.index];
-                    
-                    if (this.gamepad) {
-                        this.handleInput();
-                    }
+                    if (this.gamepad) this.handleInput();
                 }
                 requestAnimationFrame(() => this.pollGamepad());
             }
             
             handleInput() {
                 const gp = this.gamepad;
-                
-                // Left stick for cursor movement
                 let axisX = Math.abs(gp.axes[0]) > this.deadzone ? gp.axes[0] : 0;
                 let axisY = Math.abs(gp.axes[1]) > this.deadzone ? gp.axes[1] : 0;
                 
                 if (axisX !== 0 || axisY !== 0) {
                     this.cursorX += axisX * this.cursorSpeed;
                     this.cursorY += axisY * this.cursorSpeed;
-                    
-                    // Clamp cursor to screen
                     this.cursorX = Math.max(0, Math.min(window.innerWidth, this.cursorX));
                     this.cursorY = Math.max(0, Math.min(window.innerHeight, this.cursorY));
-                    
                     this.cursor.style.left = this.cursorX + 'px';
                     this.cursor.style.top = this.cursorY + 'px';
                 }
                 
-                // A button (0) for click
                 if (gp.buttons[0].pressed && !this.lastButtons[0]) {
                     this.simulateClick(this.cursorX, this.cursorY);
                 }
                 
-                // B button (1) for right-click/back
                 if (gp.buttons[1].pressed && !this.lastButtons[1]) {
                     this.simulateClick(this.cursorX, this.cursorY, true);
                 }
                 
-                // D-pad for WASD movement in game
-                if (gp.buttons[12].pressed) { // Up
-                    this.simulateKey('W', 87);
-                }
-                if (gp.buttons[13].pressed) { // Down
-                    this.simulateKey('S', 83);
-                }
-                if (gp.buttons[14].pressed) { // Left
-                    this.simulateKey('A', 65);
-                }
-                if (gp.buttons[15].pressed) { // Right
-                    this.simulateKey('D', 68);
-                }
+                // D-pad for WASD
+                if (gp.buttons[12].pressed) this.simulateKey('W', 87);
+                if (gp.buttons[13].pressed) this.simulateKey('S', 83);
+                if (gp.buttons[14].pressed) this.simulateKey('A', 65);
+                if (gp.buttons[15].pressed) this.simulateKey('D', 68);
                 
                 this.lastButtons = gp.buttons.map(b => b.pressed);
             }
             
             simulateClick(x, y, rightClick = false) {
-                const ruffle = document.querySelector('ruffle-player');
-                if (ruffle) {
-                    const rect = ruffle.getBoundingClientRect();
-                    const clickX = x - rect.left;
-                    const clickY = y - rect.top;
-                    
+                const target = document.querySelector('ruffle-player') || document.elementFromPoint(x, y);
+                if (target) {
                     const event = new MouseEvent(rightClick ? 'contextmenu' : 'click', {
                         bubbles: true,
                         cancelable: true,
@@ -402,8 +458,7 @@
                         clientY: y,
                         button: rightClick ? 2 : 0
                     });
-                    
-                    ruffle.dispatchEvent(event);
+                    target.dispatchEvent(event);
                 }
             }
             
@@ -420,10 +475,10 @@
             }
         }
 
-        // Memory Monitor for Xbox
+        // Memory Monitor
         class MemoryMonitor {
             constructor() {
-                this.checkInterval = 5000; // Check every 5 seconds
+                this.checkInterval = 5000;
                 this.warningShown = false;
                 this.startMonitoring();
             }
@@ -435,16 +490,10 @@
                         const limitMB = performance.memory.jsHeapSizeLimit / 1048576;
                         const usage = (usedMB / limitMB) * 100;
                         
-                        console.log(`Memory: ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB (${usage.toFixed(1)}%)`);
-                        
                         if (usage > 80 && !this.warningShown) {
                             document.getElementById('memory-warning').classList.add('show');
                             this.warningShown = true;
-                            
-                            // Try garbage collection if available
-                            if (window.gc) {
-                                window.gc();
-                            }
+                            if (window.gc) window.gc();
                         }
                     }
                 }, this.checkInterval);
@@ -466,9 +515,7 @@
                 if (this.progress >= 100) {
                     setTimeout(() => {
                         this.loadingScreen.classList.add('hidden');
-                        setTimeout(() => {
-                            this.loadingScreen.remove();
-                        }, 500);
+                        setTimeout(() => this.loadingScreen.remove(), 500);
                     }, 500);
                 }
             }
@@ -482,28 +529,27 @@
             }
         }
 
-        // Initialize everything when DOM is ready
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             const loadingManager = new LoadingManager();
             loadingManager.startFakeProgress();
             
-            // Initialize Xbox controller
             const controller = new XboxController();
-            
-            // Initialize memory monitor
             const memoryMonitor = new MemoryMonitor();
             
-            // Load Ruffle and game
+            // Auto-show captcha on load
+            setTimeout(() => showCaptcha(), 1000);
+            
+            // Load Ruffle
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
             const container = document.getElementById('content');
             container.appendChild(player);
+            rufflePlayer = player;
             
-            // Configure player for Xbox
             player.style.width = '100%';
             player.style.height = '100%';
             
-            // Load the game SWF with optimized parameters
             const swfUrl = media + 'play/v2/client/club_penguin.swf?clientVersion=21639';
             const flashvars = {
                 play: media + 'play/',
@@ -530,23 +576,21 @@
                 url: swfUrl,
                 parameters: flashvarsString,
                 allowScriptAccess: true,
-                quality: 'low', // Xbox optimization
-                wmode: 'direct' // Better performance than transparent
+                quality: 'low',
+                wmode: 'direct'
             });
             
-            // Complete loading when game starts
             player.addEventListener('loadeddata', () => {
-                console.log('Game loaded');
+                console.log('✅ Game loaded');
                 loadingManager.updateProgress(100);
             });
             
-            // Error handling
             player.addEventListener('error', (e) => {
-                console.error('Ruffle error:', e);
-                alert('Error loading game. Please refresh the page.');
+                console.error('❌ Ruffle error:', e);
+                updateConnectionStatus('Error loading game - refresh page', true);
             });
             
-            console.log('Club Penguin Zero - Xbox Edition Initialized');
+            console.log('🎮 Club Penguin Zero - Xbox Edition Initialized');
         });
     </script>
 </body>
