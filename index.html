@@ -3,375 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play Now! | Club Penguin Zero - Xbox Edition</title>
+    <title>Play Now! | Club Penguin Zero</title>
     <link rel="shortcut icon" href="https://play.cpzero.net/assets/sites/play.clubpenguin.com/themes/snowball/favicon.ico" type="image/vnd.microsoft.icon">
+    
+    <!-- Optimized CSS loading for Xbox -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Critical inline CSS for faster initial render */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: #fff;
+            overflow-x: hidden;
         }
-
-        html, body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: #000;
-            font-family: Arial, sans-serif;
-        }
-
-        /* Loading Screen */
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 999999;
-            transition: opacity 0.5s ease-out;
-        }
-
-        #loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-logo {
-            width: 300px;
-            margin-bottom: 20px;
-        }
-
-        .loading-logo img {
-            width: 100%;
-            height: auto;
-        }
-
-        .loading-text {
-            color: white;
-            font-size: 20px;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        .loading-progress {
-            width: 300px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        .loading-bar {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Xbox Controller Hint */
-        .controller-hint {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 16px;
-            z-index: 1000;
-            display: none;
-            text-align: center;
-        }
-
-        .controller-hint.active {
-            display: block;
-        }
-
-        .controller-hint span {
-            color: #0f0;
-            font-weight: bold;
-        }
-
-        /* Game Container */
-        #game-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
-        }
-
-        #content {
-            width: 100%;
-            height: 100%;
+        .page { max-width: 1920px; margin: 0 auto; }
+        
+        /* Header styles */
+        #section-header {
+            background: #0a5f9e;
+            padding: 10px 20px;
             position: relative;
         }
-
-        ruffle-player {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* Captcha Overlay */
-        #captcha-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
+        #affiliate-header { display: none; }
+        nav {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 100000;
-            flex-direction: column;
+            justify-content: space-between;
+            flex-wrap: wrap;
         }
-
-        #captcha-overlay.active {
+        #home-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px 15px;
+        }
+        .mainnav {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+        .mainnav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            transition: background 0.2s;
+        }
+        .mainnav a:hover, .mainnav a:focus {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        .navbar-right {
+            list-style: none;
             display: flex;
         }
-
-        #captcha-overlay h2 {
-            color: white;
-            margin-bottom: 20px;
-            font-size: 24px;
+        #logout-link {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        #captcha-overlay p {
-            color: #aaa;
-            margin-bottom: 30px;
+        #logout-link img {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Main content */
+        #content {
+            min-height: 60vh;
+            padding: 20px;
             text-align: center;
-            max-width: 500px;
         }
-
-        .cf-turnstile {
-            transform: scale(1.2);
+        
+        /* Turnstile widget - hidden but functional */
+        #turnstile-widget {
+            position: absolute;
+            left: -9999px;
         }
-
-        /* Memory Warning */
-        .memory-warning {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+        
+        /* Footer */
+        #section-footer {
+            background: #0a5f9e;
+            padding: 20px;
+            text-align: center;
             font-size: 14px;
-            z-index: 10000;
-            display: none;
         }
-
-        .memory-warning.show {
-            display: block;
+        #footer-updated {
+            margin: 10px 0;
         }
-
-        /* Connection Status */
-        .connection-status {
+        #footer-updated a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        #footer-updated a:hover {
+            text-decoration: underline;
+        }
+        #footer-legal {
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.8;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Fullscreen button */
+        #fullscreen-btn {
             position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 10000;
-            display: none;
+            bottom: 20px;
+            right: 20px;
+            background: #0a5f9e;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            z-index: 9999;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
-
-        .connection-status.show {
-            display: block;
+        #fullscreen-btn:hover, #fullscreen-btn:focus {
+            background: #0d7ac4;
+            transform: scale(1.05);
         }
-
-        .connection-status.error {
-            color: #f00;
+        #fullscreen-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Fullscreen mode styles */
+        body:fullscreen {
+            background: #000;
+        }
+        body:-webkit-full-screen {
+            background: #000;
+        }
+        body:-moz-full-screen {
+            background: #000;
+        }
+        body:-ms-fullscreen {
+            background: #000;
         }
     </style>
 </head>
 <body>
-    <!-- Captcha Overlay -->
-    <div id="captcha-overlay">
-        <h2>🔒 Security Verification</h2>
-        <p>Please complete the security check to continue. This helps protect Club Penguin Zero from bots.</p>
-        <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAACCBKuQjFh5yFw16" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-theme="dark"></div>
-    </div>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div class="loading-logo">
-            <img src="https://static.wikitide.net/cpimaginedwiki/thumb/6/65/Club_Penguin_Zero_logo.gif/300px-Club_Penguin_Zero_logo.gif" alt="Club Penguin Zero">
-        </div>
-        <div class="loading-text">Loading Club Penguin Zero for Xbox...</div>
-        <div class="loading-progress">
-            <div class="loading-bar" id="loading-bar"></div>
-        </div>
-    </div>
-
-    <!-- Controller Hint -->
-    <div class="controller-hint" id="controller-hint">
-        🎮 Xbox Controller Connected<br>
-        <span>Left Stick</span>: Move | <span>A</span>: Click | <span>B</span>: Back
-    </div>
-
-    <!-- Connection Status -->
-    <div class="connection-status" id="connection-status">
-        Connecting to server...
-    </div>
-
-    <!-- Memory Warning -->
-    <div class="memory-warning" id="memory-warning">
-        ⚠️ Low Memory Detected - Performance May Degrade
-    </div>
-
-    <!-- Game Container -->
-    <div id="game-container">
-        <main id="content"></main>
-    </div>
-
-    <!-- Cloudflare Turnstile -->
+    <!-- Cloudflare Turnstile - async loading -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
-    <!-- Ruffle Flash Emulator -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
-
-    <!-- URL Proxy to fix ishikdeveloper.github.io → play.cpzero.net -->
+    
+    <!-- Ruffle loader - deferred -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle" defer></script>
+    
     <script>
-        (function() {
-            const originalFetch = window.fetch;
-            const originalXHROpen = XMLHttpRequest.prototype.open;
-
-            function transformUrl(url) {
-                if (typeof url === 'string') {
-                    if (url.includes('ishikdeveloper.github.io')) {
-                        return url.replace(/https?:\/\/ishikdeveloper\.github\.io/g, 'https://play.cpzero.net');
-                    }
-                }
-                return url;
-            }
-
-            window.fetch = function(resource, init) {
-                resource = transformUrl(resource);
-                return originalFetch.call(this, resource, init);
-            };
-
-            XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-                url = transformUrl(url);
-                return originalXHROpen.call(this, method, url, async, user, password);
-            };
-
-            console.log('🔧 URL proxy installed: ishikdeveloper.github.io → play.cpzero.net');
-        })();
-    </script>
-
-    <!-- Main Script -->
-    <script>
-        const media = "https://media.cpzero.net/";
-        let rufflePlayer = null;
-        let captchaToken = null;
-        let captchaRequired = false;
-
-        // Captcha handling
-        let captchaRetries = 0;
-        const MAX_RETRIES = 3;
-
+        // Xbox-optimized JavaScript
+        var captchaToken = null;
+        var media = "https://media.cpzero.net/";
+        
+        // Memory-efficient captcha handling
         function onTurnstileSuccess(token) {
-            console.log("✅ Captcha verified successfully");
+            console.log("Turnstile success");
             captchaToken = token;
-            captchaRetries = 0;
-            document.getElementById('captcha-overlay').classList.remove('active');
-            updateConnectionStatus("Captcha verified ✓", false);
-            
-            // Flash will call getCaptchaToken() when it needs the token
-            // No need to push it - the game pulls it via ExternalInterface
-            console.log("Token ready for Flash to retrieve");
+            var flash = getFlashObject();
+            if (flash) {
+                try {
+                    flash.finishedCaptcha(String(token));
+                } catch (e) {
+                    console.error("Error calling callback:", e);
+                }
+            }
+        }
+
+        function getFlashObject() {
+            return document.getElementById("cp_flash") || 
+                   document.getElementById("game") ||
+                   document.getElementById("flashcontent");
         }
 
         function onTurnstileError(code) {
-            console.error("❌ Captcha error:", code);
-            captchaRetries++;
-            
-            if (captchaRetries >= MAX_RETRIES) {
-                console.log("⚠️ Captcha service down - login may fail without valid token");
-                document.getElementById('captcha-overlay').classList.remove('active');
-                updateConnectionStatus("Captcha unavailable - try again later", true);
-                return;
-            }
-            
+            console.error("Turnstile error:", code);
             captchaToken = null;
-            updateConnectionStatus(`Captcha failed (${captchaRetries}/${MAX_RETRIES}) - retrying...`, true);
-            
-            // Auto-retry after 2 seconds
-            setTimeout(() => {
-                if (window.turnstile) {
-                    turnstile.reset();
-                }
-            }, 2000);
         }
 
-        function showCaptcha() {
-            console.log("📋 Showing captcha overlay");
-            document.getElementById('captcha-overlay').classList.add('active');
-            captchaRequired = true;
-            
-            // Auto-execute invisible captcha
-            setTimeout(() => {
-                if (window.turnstile) {
-                    turnstile.execute("#turnstile-widget");
-                }
-            }, 500);
+        function grecaptchaSubmit() {
+            console.log("Captcha request received");
+            if (window.turnstile) {
+                turnstile.reset();
+                turnstile.execute("#turnstile-widget");
+            } else {
+                console.error("Turnstile not loaded");
+            }
         }
 
         function getCaptchaToken() {
-            if (!captchaToken) {
-                showCaptcha();
-                return null;
-            }
             return captchaToken;
         }
 
         function triggerCaptcha() {
-            showCaptcha();
+            grecaptchaSubmit();
         }
 
-        function grecaptchaSubmit() {
-            showCaptcha();
+        function isRuffle() {
+            var flashPlugin = navigator.plugins["Shockwave Flash"];
+            return (flashPlugin && flashPlugin.filename == "ruffle.js");
         }
-
-        function updateConnectionStatus(message, isError) {
-            const statusEl = document.getElementById('connection-status');
-            statusEl.textContent = message;
-            statusEl.classList.toggle('error', isError);
-            statusEl.classList.add('show');
-            
-            if (!isError) {
-                setTimeout(() => {
-                    statusEl.classList.remove('show');
-                }, 3000);
-            }
-        }
-
-        // Xbox-Optimized Ruffle Config
+        
+        // Xbox-optimized Ruffle configuration
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
-            quality: "low",
-            scale: "exactfit",
-            letterbox: "off",
-            forceAlign: false,
-            forceScale: true,
-            maxExecutionDuration: 15,
-            splashScreen: false,
-            autoplay: "on",
-            unmuteOverlay: "hidden",
-            fontSources: [media + "play/v2/client/fonts/en/FontLibrary.swf"],
             socketProxy: [
                 {
                     host: "server.cpzero.net",
@@ -382,252 +238,150 @@
                     host: "server.cpzero.net",
                     port: 9875,
                     proxyUrl: "wss://server.cpzero.net/sub_zero"
-                },
-                {
-                    host: "server.cpzero.net",
-                    port: 9876,
-                    proxyUrl: "wss://server.cpzero.net/below_zero"
                 }
             ],
-            allowScriptAccess: true,
+            maxExecutionDuration: 60, // Reduced for Xbox
+            fontSources: [
+                "https://media.cpzero.net/play/v2/client/fonts/en/FontLibrary.swf"
+            ],
+            splashScreen: false,
+            autoplay: "on",
+            unmuteOverlay: "hidden",
+            // Xbox-specific optimizations
             warnOnUnsupportedContent: false,
-            preferredRenderer: "webgl",
-            backgroundColor: "#000000"
+            letterbox: "on",
+            // Reduce quality for better performance on Xbox
+            quality: "medium",
+            scale: "showAll"
         };
+    </script>
 
-        // Xbox Controller Support
-        class XboxController {
-            constructor() {
-                this.gamepad = null;
-                this.lastButtons = [];
-                this.cursorX = window.innerWidth / 2;
-                this.cursorY = window.innerHeight / 2;
-                this.cursorSpeed = 8;
-                this.deadzone = 0.15;
-                this.cursor = this.createCursor();
-                
-                window.addEventListener('gamepadconnected', (e) => this.onConnect(e));
-                window.addEventListener('gamepaddisconnected', (e) => this.onDisconnect(e));
-                this.pollGamepad();
-            }
+    <div class="page" id="page">
+        <header id="section-header" class="section section-header">
+            <div id="affiliate-header">
+                <a id="affiliate-header-link" href="https://play.cpzero.net/">
+                    <img src="https://play.cpzero.net/sites/play.clubpenguin.com/themes/snowball/img/affiliate-cp-logo.png" alt="Club Penguin">
+                </a>
+            </div>
             
-            createCursor() {
-                const cursor = document.createElement('div');
-                cursor.style.cssText = `
-                    position: fixed;
-                    width: 20px;
-                    height: 20px;
-                    background: rgba(0, 255, 0, 0.8);
-                    border: 2px solid white;
-                    border-radius: 50%;
-                    pointer-events: none;
-                    z-index: 99999;
-                    display: none;
-                    transform: translate(-50%, -50%);
-                `;
-                document.body.appendChild(cursor);
-                return cursor;
-            }
+            <nav>
+                <a id="home-link" href="https://play.cpzero.net/">Home</a>
+                <ul class="mainnav">
+                    <li><a href="https://www.cpzero.net/download" target="_blank">Download</a></li>
+                </ul>
+                <ul class="navbar-right">
+                    <li>
+                        <a id="logout-link" href="https://play.cpzero.net/">
+                            <img src="https://play.cpzero.net/sites/play.clubpenguin.com/themes/snowball/img/icon-logout.png" alt="">
+                            Log off
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </header>
+
+        <main id="content">
+            <div class="loading"></div>
+            <p style="margin-top: 20px;">Loading Club Penguin Zero...</p>
+        </main>
+
+        <!-- Fullscreen button -->
+        <button id="fullscreen-btn" aria-label="Toggle fullscreen">⛶ Fullscreen</button>
+
+        <div id="turnstile-widget"
+             class="cf-turnstile"
+             data-sitekey="0x4AAAAAACCBKuQjFh5yFw16"
+             data-callback="onTurnstileSuccess"
+             data-error-callback="onTurnstileError"
+             data-size="invisible">
+        </div>
+
+        <footer id="section-footer" class="section section-footer">
+            <p id="footer-updated">
+                <a href="https://discord.gg/N8sEcSdzwc" target="_blank">Discord</a>
+                &nbsp;| &nbsp;
+                <a href="https://x.com/CPZeroOfficial" target="_blank">Twitter</a>
+                &nbsp;| &nbsp;
+                <a href="https://www.youtube.com/@ClubPenguinZero" target="_blank">YouTube</a>
+                &nbsp;| &nbsp;
+                <a href="mailto:support@cpzero.net">support@cpzero.net</a>
+            </p>
+            <p id="footer-legal">
+                Club Penguin Zero is an independent fanmade recreation of Disney's Club Penguin. 
+                We are not affiliated with Club Penguin, Disney and/or any of its services in any way.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Lazy load non-critical scripts after page load
+        window.addEventListener('load', function() {
+            // Load additional scripts only when needed
+            console.log("Page loaded - Xbox optimized version");
             
-            onConnect(e) {
-                console.log("🎮 Controller Connected:", e.gamepad.id);
-                this.gamepad = e.gamepad;
-                this.cursor.style.display = 'block';
-                document.getElementById('controller-hint').classList.add('active');
-                setTimeout(() => {
-                    document.getElementById('controller-hint').classList.remove('active');
-                }, 5000);
-            }
+            // Initialize fullscreen button
+            initFullscreen();
+        });
+        
+        // Fullscreen functionality
+        function initFullscreen() {
+            var fullscreenBtn = document.getElementById('fullscreen-btn');
             
-            onDisconnect(e) {
-                console.log("🎮 Controller Disconnected");
-                this.gamepad = null;
-                this.cursor.style.display = 'none';
-            }
+            if (!fullscreenBtn) return;
             
-            pollGamepad() {
-                if (this.gamepad) {
-                    const gamepads = navigator.getGamepads();
-                    this.gamepad = gamepads[this.gamepad.index];
-                    if (this.gamepad) this.handleInput();
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Update button text when fullscreen state changes
+            document.addEventListener('fullscreenchange', updateFullscreenButton);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+            document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+            document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+        }
+        
+        function toggleFullscreen() {
+            var elem = document.documentElement;
+            
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && !document.msFullscreenElement) {
+                // Enter fullscreen
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
                 }
-                requestAnimationFrame(() => this.pollGamepad());
-            }
-            
-            handleInput() {
-                const gp = this.gamepad;
-                let axisX = Math.abs(gp.axes[0]) > this.deadzone ? gp.axes[0] : 0;
-                let axisY = Math.abs(gp.axes[1]) > this.deadzone ? gp.axes[1] : 0;
-                
-                if (axisX !== 0 || axisY !== 0) {
-                    this.cursorX += axisX * this.cursorSpeed;
-                    this.cursorY += axisY * this.cursorSpeed;
-                    this.cursorX = Math.max(0, Math.min(window.innerWidth, this.cursorX));
-                    this.cursorY = Math.max(0, Math.min(window.innerHeight, this.cursorY));
-                    this.cursor.style.left = this.cursorX + 'px';
-                    this.cursor.style.top = this.cursorY + 'px';
-                }
-                
-                if (gp.buttons[0].pressed && !this.lastButtons[0]) {
-                    this.simulateClick(this.cursorX, this.cursorY);
-                }
-                
-                if (gp.buttons[1].pressed && !this.lastButtons[1]) {
-                    this.simulateClick(this.cursorX, this.cursorY, true);
-                }
-                
-                // D-pad for WASD
-                if (gp.buttons[12].pressed) this.simulateKey('W', 87);
-                if (gp.buttons[13].pressed) this.simulateKey('S', 83);
-                if (gp.buttons[14].pressed) this.simulateKey('A', 65);
-                if (gp.buttons[15].pressed) this.simulateKey('D', 68);
-                
-                this.lastButtons = gp.buttons.map(b => b.pressed);
-            }
-            
-            simulateClick(x, y, rightClick = false) {
-                const target = document.querySelector('ruffle-player') || document.elementFromPoint(x, y);
-                if (target) {
-                    const event = new MouseEvent(rightClick ? 'contextmenu' : 'click', {
-                        bubbles: true,
-                        cancelable: true,
-                        clientX: x,
-                        clientY: y,
-                        button: rightClick ? 2 : 0
-                    });
-                    target.dispatchEvent(event);
-                }
-            }
-            
-            simulateKey(key, keyCode) {
-                const ruffle = document.querySelector('ruffle-player');
-                if (ruffle) {
-                    const event = new KeyboardEvent('keydown', {
-                        key: key,
-                        keyCode: keyCode,
-                        bubbles: true
-                    });
-                    ruffle.dispatchEvent(event);
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
                 }
             }
         }
-
-        // Memory Monitor
-        class MemoryMonitor {
-            constructor() {
-                this.checkInterval = 5000;
-                this.warningShown = false;
-                this.startMonitoring();
-            }
+        
+        function updateFullscreenButton() {
+            var fullscreenBtn = document.getElementById('fullscreen-btn');
+            if (!fullscreenBtn) return;
             
-            startMonitoring() {
-                setInterval(() => {
-                    if (performance.memory) {
-                        const usedMB = performance.memory.usedJSHeapSize / 1048576;
-                        const limitMB = performance.memory.jsHeapSizeLimit / 1048576;
-                        const usage = (usedMB / limitMB) * 100;
-                        
-                        if (usage > 80 && !this.warningShown) {
-                            document.getElementById('memory-warning').classList.add('show');
-                            this.warningShown = true;
-                            if (window.gc) window.gc();
-                        }
-                    }
-                }, this.checkInterval);
-            }
+            var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                             document.mozFullScreenElement || document.msFullscreenElement;
+            
+            fullscreenBtn.textContent = isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Fullscreen';
         }
-
-        // Loading Manager
-        class LoadingManager {
-            constructor() {
-                this.loadingBar = document.getElementById('loading-bar');
-                this.loadingScreen = document.getElementById('loading-screen');
-                this.progress = 0;
-            }
-            
-            updateProgress(percent) {
-                this.progress = Math.min(percent, 100);
-                this.loadingBar.style.width = this.progress + '%';
-                
-                if (this.progress >= 100) {
-                    setTimeout(() => {
-                        this.loadingScreen.classList.add('hidden');
-                        setTimeout(() => this.loadingScreen.remove(), 500);
-                    }, 500);
-                }
-            }
-            
-            startFakeProgress() {
-                const interval = setInterval(() => {
-                    this.progress += 5;
-                    this.updateProgress(this.progress);
-                    if (this.progress >= 90) clearInterval(interval);
-                }, 300);
-            }
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            const loadingManager = new LoadingManager();
-            loadingManager.startFakeProgress();
-            
-            const controller = new XboxController();
-            const memoryMonitor = new MemoryMonitor();
-            
-            // Auto-show captcha on load
-            setTimeout(() => showCaptcha(), 1000);
-            
-            // Load Ruffle
-            const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
-            const container = document.getElementById('content');
-            container.appendChild(player);
-            rufflePlayer = player;
-            
-            player.style.width = '100%';
-            player.style.height = '100%';
-            
-            const swfUrl = media + 'play/v2/client/club_penguin.swf?clientVersion=21639';
-            const flashvars = {
-                play: media + 'play/',
-                client: media + 'play/v2/client/',
-                content: media + 'play/v2/content/',
-                games: media + 'play/v2/games/',
-                connectionID: 'cp68294',
-                a: '0',
-                p: '1',
-                lang: 'en',
-                phrasechat: media + 'social/autocomplete/v2/search/',
-                isAS3WebServicesOn: 'true',
-                clientVersion: '21639',
-                configVersion: '1485906035',
-                contentVersion: '84421',
-                minigameVersion: '13162'
-            };
-            
-            const flashvarsString = Object.entries(flashvars)
-                .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-                .join('&');
-            
-            player.load({
-                url: swfUrl,
-                parameters: flashvarsString,
-                allowScriptAccess: true,
-                quality: 'low',
-                wmode: 'direct'
-            });
-            
-            player.addEventListener('loadeddata', () => {
-                console.log('✅ Game loaded');
-                loadingManager.updateProgress(100);
-            });
-            
-            player.addEventListener('error', (e) => {
-                console.error('❌ Ruffle error:', e);
-                updateConnectionStatus('Error loading game - refresh page', true);
-            });
-            
-            console.log('🎮 Club Penguin Zero - Xbox Edition Initialized');
+        
+        // Memory cleanup for Xbox
+        window.addEventListener('beforeunload', function() {
+            // Clean up to prevent memory leaks
+            window.RufflePlayer = null;
+            captchaToken = null;
         });
     </script>
 </body>
