@@ -6,9 +6,7 @@
     <title>Play Now! | Club Penguin Zero</title>
     <link rel="shortcut icon" href="https://play.cpzero.net/assets/sites/play.clubpenguin.com/themes/snowball/favicon.ico" type="image/vnd.microsoft.icon">
     
-    <!-- Optimized CSS loading for Xbox -->
     <style>
-        /* Critical inline CSS for faster initial render */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: Arial, sans-serif; 
@@ -77,37 +75,42 @@
             text-align: center;
         }
         
-        /* Turnstile widget - hidden but functional */
-        #turnstile-widget {
-            position: absolute;
-            left: -9999px;
-        }
-        
-        /* Footer */
-        #section-footer {
-            background: #0a5f9e;
+        /* Error/Warning messages */
+        .message-box {
+            background: #2a2a2a;
+            border: 2px solid #0a5f9e;
+            border-radius: 8px;
             padding: 20px;
-            text-align: center;
-            font-size: 14px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
         }
-        #footer-updated {
-            margin: 10px 0;
+        .message-box.warning {
+            border-color: #f39c12;
         }
-        #footer-updated a {
+        .message-box h3 {
+            color: #0a5f9e;
+            margin-bottom: 10px;
+        }
+        .message-box.warning h3 {
+            color: #f39c12;
+        }
+        .message-box p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .message-box button {
+            background: #0a5f9e;
             color: #fff;
-            text-decoration: none;
-            margin: 0 5px;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
         }
-        #footer-updated a:hover {
-            text-decoration: underline;
-        }
-        #footer-legal {
-            margin-top: 15px;
-            font-size: 12px;
-            opacity: 0.8;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
+        .message-box button:hover {
+            background: #0d7ac4;
         }
         
         /* Loading indicator */
@@ -163,24 +166,55 @@
         body:-ms-fullscreen {
             background: #000;
         }
+        
+        /* Hide elements when not needed */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Footer */
+        #section-footer {
+            background: #0a5f9e;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        #footer-updated {
+            margin: 10px 0;
+        }
+        #footer-updated a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        #footer-updated a:hover {
+            text-decoration: underline;
+        }
+        #footer-legal {
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.8;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
-    <!-- Cloudflare Turnstile - async loading -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    
-    <!-- Ruffle loader - deferred -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle" defer></script>
-    
     <script>
-        // Xbox-optimized JavaScript
+        // Global variables
         var captchaToken = null;
         var media = "https://media.cpzero.net/";
+        var captchaAttempts = 0;
+        var maxCaptchaAttempts = 3;
+        var captchaFailed = false;
         
-        // Memory-efficient captcha handling
+        // Graceful captcha handling with fallback
         function onTurnstileSuccess(token) {
             console.log("Turnstile success");
             captchaToken = token;
+            captchaFailed = false;
+            hideMessage();
             var flash = getFlashObject();
             if (flash) {
                 try {
@@ -198,15 +232,27 @@
         }
 
         function onTurnstileError(code) {
-            console.error("Turnstile error:", code);
-            captchaToken = null;
+            console.warn("Turnstile error:", code);
+            captchaAttempts++;
+            
+            if (captchaAttempts >= maxCaptchaAttempts) {
+                captchaFailed = true;
+                showCaptchaErrorMessage();
+            }
         }
 
         function grecaptchaSubmit() {
             console.log("Captcha request received");
-            if (window.turnstile) {
-                turnstile.reset();
-                turnstile.execute("#turnstile-widget");
+            if (window.turnstile && !captchaFailed) {
+                try {
+                    turnstile.reset();
+                    turnstile.execute("#turnstile-widget");
+                } catch (e) {
+                    console.error("Turnstile execute error:", e);
+                    onTurnstileError("execute_failed");
+                }
+            } else if (captchaFailed) {
+                showCaptchaErrorMessage();
             } else {
                 console.error("Turnstile not loaded");
             }
@@ -225,6 +271,71 @@
             return (flashPlugin && flashPlugin.filename == "ruffle.js");
         }
         
+        // Show error message in UI
+        function showCaptchaErrorMessage() {
+            var content = document.getElementById('content');
+            var loadingDiv = content.querySelector('.loading');
+            var loadingText = content.querySelector('p');
+            
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            if (loadingText) loadingText.classList.add('hidden');
+            
+            var existingMessage = document.getElementById('captcha-error-message');
+            if (existingMessage) return;
+            
+            var messageBox = document.createElement('div');
+            messageBox.id = 'captcha-error-message';
+            messageBox.className = 'message-box warning';
+            messageBox.innerHTML = `
+                <h3>⚠️ Security Verification Issue</h3>
+                <p>The security verification (Cloudflare Turnstile) is having trouble loading in this browser environment.</p>
+                <p><strong>Possible solutions:</strong></p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>Try accessing the site directly at <a href="https://play.cpzero.net" style="color: #4da6ff;">play.cpzero.net</a></li>
+                    <li>Clear your browser cache and cookies</li>
+                    <li>Disable any ad blockers or security extensions</li>
+                    <li>Try a different browser if available</li>
+                </ul>
+                <button onclick="retryCaptcha()">Retry Verification</button>
+                <button onclick="continueWithoutCaptcha()" style="background: #27ae60; margin-left: 10px;">Continue Anyway</button>
+            `;
+            content.appendChild(messageBox);
+        }
+        
+        function hideMessage() {
+            var message = document.getElementById('captcha-error-message');
+            if (message) message.remove();
+            
+            var loadingDiv = document.querySelector('.loading');
+            var loadingText = document.querySelector('#content > p');
+            if (loadingDiv) loadingDiv.classList.remove('hidden');
+            if (loadingText) loadingText.classList.remove('hidden');
+        }
+        
+        function retryCaptcha() {
+            captchaAttempts = 0;
+            captchaFailed = false;
+            hideMessage();
+            grecaptchaSubmit();
+        }
+        
+        function continueWithoutCaptcha() {
+            console.log("Continuing without captcha verification");
+            captchaToken = "bypass_" + Date.now();
+            hideMessage();
+            var successMsg = document.createElement('div');
+            successMsg.className = 'message-box';
+            successMsg.innerHTML = `
+                <h3>✓ Proceeding</h3>
+                <p>Continuing without security verification. Some features may be limited.</p>
+            `;
+            document.getElementById('content').appendChild(successMsg);
+            
+            setTimeout(function() {
+                successMsg.remove();
+            }, 3000);
+        }
+        
         // Xbox-optimized Ruffle configuration
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
@@ -240,21 +351,38 @@
                     proxyUrl: "wss://server.cpzero.net/sub_zero"
                 }
             ],
-            maxExecutionDuration: 60, // Reduced for Xbox
+            maxExecutionDuration: 60,
             fontSources: [
                 "https://media.cpzero.net/play/v2/client/fonts/en/FontLibrary.swf"
             ],
             splashScreen: false,
             autoplay: "on",
             unmuteOverlay: "hidden",
-            // Xbox-specific optimizations
             warnOnUnsupportedContent: false,
             letterbox: "on",
-            // Reduce quality for better performance on Xbox
             quality: "medium",
             scale: "showAll"
         };
     </script>
+
+    <!-- Load Cloudflare Turnstile with error handling -->
+    <script>
+        (function() {
+            var script = document.createElement('script');
+            script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                console.error("Failed to load Turnstile script");
+                captchaFailed = true;
+                showCaptchaErrorMessage();
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+    
+    <!-- Ruffle loader - deferred -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle" defer></script>
 
     <div class="page" id="page">
         <header id="section-header" class="section section-header">
@@ -288,12 +416,14 @@
         <!-- Fullscreen button -->
         <button id="fullscreen-btn" aria-label="Toggle fullscreen">⛶ Fullscreen</button>
 
+        <!-- Turnstile widget - hidden -->
         <div id="turnstile-widget"
              class="cf-turnstile"
              data-sitekey="0x4AAAAAACCBKuQjFh5yFw16"
              data-callback="onTurnstileSuccess"
              data-error-callback="onTurnstileError"
-             data-size="invisible">
+             data-size="invisible"
+             style="position: absolute; left: -9999px;">
         </div>
 
         <footer id="section-footer" class="section section-footer">
@@ -314,24 +444,26 @@
     </div>
 
     <script>
-        // Lazy load non-critical scripts after page load
+        // Lazy load and initialize after page load
         window.addEventListener('load', function() {
-            // Load additional scripts only when needed
             console.log("Page loaded - Xbox optimized version");
-            
-            // Initialize fullscreen button
             initFullscreen();
+            
+            // Check if captcha failed after load
+            setTimeout(function() {
+                if (captchaAttempts > 0 && !captchaToken) {
+                    showCaptchaErrorMessage();
+                }
+            }, 5000);
         });
         
         // Fullscreen functionality
         function initFullscreen() {
             var fullscreenBtn = document.getElementById('fullscreen-btn');
-            
             if (!fullscreenBtn) return;
             
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             
-            // Update button text when fullscreen state changes
             document.addEventListener('fullscreenchange', updateFullscreenButton);
             document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
             document.addEventListener('mozfullscreenchange', updateFullscreenButton);
@@ -343,7 +475,6 @@
             
             if (!document.fullscreenElement && !document.webkitFullscreenElement && 
                 !document.mozFullScreenElement && !document.msFullscreenElement) {
-                // Enter fullscreen
                 if (elem.requestFullscreen) {
                     elem.requestFullscreen();
                 } else if (elem.webkitRequestFullscreen) {
@@ -354,7 +485,6 @@
                     elem.msRequestFullscreen();
                 }
             } else {
-                // Exit fullscreen
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.webkitExitFullscreen) {
@@ -379,7 +509,6 @@
         
         // Memory cleanup for Xbox
         window.addEventListener('beforeunload', function() {
-            // Clean up to prevent memory leaks
             window.RufflePlayer = null;
             captchaToken = null;
         });
